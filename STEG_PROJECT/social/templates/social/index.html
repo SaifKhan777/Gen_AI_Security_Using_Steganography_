@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>InstaStego</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #fafafa;
+      margin: 0;
+    }
+    /* Navbar */
+    .navbar {
+      background: linear-gradient(90deg, #ff416c, #ff4b2b);
+      padding: 1rem 2rem;
+      color: white;
+      font-size: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar .logo {
+      font-weight: bold;
+    }
+
+    /* Upload button */
+    .upload-container {
+      position: fixed;
+      right: 30px;
+      bottom: 30px;
+      z-index: 100;
+    }
+
+    .upload-btn {
+      background: #833ab4;
+      color: white;
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* Card grid */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 2rem;
+    }
+
+    .card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      background: white;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
+    }
+
+    .card img {
+      width: 100%;
+      display: block;
+    }
+
+    /* Hover button */
+    .info-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .card:hover .info-btn {
+      display: flex;
+    }
+
+    /* Decoded message display */
+    #decoded-message {
+      background: #fff3cd;
+      color: #856404;
+      padding: 1rem;
+      margin: 1rem 2rem;
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="logo">InstaStego</div>
+    <div>📷 Explore & Share</div>
+  </div>
+
+  <div id="decoded-message"></div>
+
+  <div class="gallery">
+    {% for image in images %}
+    <div class="card">
+      <img src="{{ image.url }}" alt="Uploaded">
+      <button class="info-btn" onclick="decodeImage('{{ image.url }}')">i</button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="upload-container">
+    <form action="{% url 'decode_uploaded_image' %}" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="image" accept="image/*" onchange="this.form.submit()" style="display: none;" id="upload-input">
+      <button type="button" class="upload-btn" onclick="document.getElementById('upload-input').click()">+ Upload</button>
+    </form>
+  </div>
+
+  <script>
+    function decodeImage(imageUrl) {
+      fetch("{% url 'ajax_decode_image' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({ image_url: imageUrl })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const box = document.getElementById('decoded-message');
+        box.innerText = data.message.startsWith("AI") || data.message.startsWith("NOT") ?
+    "🤖 AI Detection: " + data.message :
+    "🕵️ Hidden Message: " + data.message;
+        box.style.display = 'block';
+      });
+    }
+  </script>
+
+</body>
+</html>
